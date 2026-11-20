@@ -1,8 +1,8 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-import { AreaStation, CityConfig } from '../services/weatherService';
-import { MapPin, Layers, AlertTriangle } from 'lucide-react';
+import { AreaStation, CityConfig, fetchLiveStationsData } from '../services/weatherService';
+import { MapPin, Layers, AlertTriangle, RefreshCw, Radio } from 'lucide-react';
 
 interface WeatherAQIMapProps {
   currentCity: CityConfig;
@@ -20,6 +20,28 @@ export const WeatherAQIMap: React.FC<WeatherAQIMapProps> = ({
   const mapInstanceRef = useRef<L.Map | null>(null);
   const markersLayerRef = useRef<L.LayerGroup | null>(null);
   const circlesLayerRef = useRef<L.LayerGroup | null>(null);
+  const [stations, setStations] = useState<AreaStation[]>(currentCity.stations);
+  const [isFetchingLive, setIsFetchingLive] = useState<boolean>(false);
+  const [hasLiveSensors, setHasLiveSensors] = useState<boolean>(false);
+
+  // Sync live API data for stations whenever city changes
+  useEffect(() => {
+    let isMounted = true;
+    const loadLiveStations = async () => {
+      setIsFetchingLive(true);
+      const liveStations = await fetchLiveStationsData(currentCity.stations);
+      if (isMounted) {
+        setStations(liveStations);
+        setHasLiveSensors(true);
+        setIsFetchingLive(false);
+      }
+    };
+
+    loadLiveStations();
+    return () => {
+      isMounted = false;
+    };
+  }, [currentCity]);
 
   const getAQIColor = (aqi: number) => {
     if (aqi <= 50) return '#10b981'; // emerald
@@ -33,7 +55,7 @@ export const WeatherAQIMap: React.FC<WeatherAQIMapProps> = ({
   useEffect(() => {
     if (!mapContainerRef.current) return;
 
-    // Initialize Map if not already created
+    // Initialize Map with public dark canvas map tiles (no API key watermark)
     if (!mapInstanceRef.current) {
       const map = L.map(mapContainerRef.current, {
         center: [currentCity.lat, currentCity.lng],
@@ -41,11 +63,16 @@ export const WeatherAQIMap: React.FC<WeatherAQIMapProps> = ({
         zoomControl: true,
       });
 
-      // Dark atmospheric basemap suitable for pollution visualization
-      L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-        attribution: '&copy; OpenStreetMap contributors &copy; CARTO',
-        subdomains: 'abcd',
-        maxZoom: 19,
+      // Esri World Dark Gray Canvas: High-res dark cartography without watermark/key restriction
+      L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}', {
+        attribution: '&copy; Esri &copy; DeLorme, NAVTEQ',
+        maxZoom: 16,
+      }).addTo(map);
+
+      // Reference labels overlay
+      L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Reference/MapServer/tile/{z}/{y}/{x}', {
+        attribution: '',
+        maxZoom: 16,
       }).addTo(map);
 
       mapInstanceRef.current = map;
@@ -63,23 +90,23 @@ export const WeatherAQIMap: React.FC<WeatherAQIMapProps> = ({
     markersLayerRef.current.clearLayers();
     circlesLayerRef.current.clearLayers();
 
-    currentCity.stations.forEach((station) => {
+    stations.forEach((station) => {
       const color = getAQIColor(station.aqi);
 
       // Area Smog / AQI Diffusion Circle
       const circle = L.circle([station.lat, station.lng], {
         color: color,
         fillColor: color,
-        fillOpacity: 0.35,
+        fillOpacity: 0.38,
         radius: 2600, // 2.6 km radius
         weight: 1.5,
       });
 
       circle.bindTooltip(`
-        <div style="font-family: inherit; font-size: 12px; color: #fff; background: #0f172a; padding: 6px 10px; border-radius: 8px; border: 1px solid ${color};">
+        <div style="font-family: system-ui, sans-serif; font-size: 12px; color: #fff; background: #020617; padding: 6px 10px; border-radius: 8px; border: 1px solid ${color};">
           <strong>${station.name}</strong><br/>
           AQI: <span style="color: ${color}; font-weight: bold;">${station.aqi}</span> (${station.status})<br/>
-          PM2.5: ${station.pm25} µg/m³
+          PM2.5: ${station.pm25} µg/m³ • PM10: ${station.pm10} µg/m³
         </div>
       `, { permanent: false, direction: 'top' });
 
@@ -94,22 +121,25 @@ export const WeatherAQIMap: React.FC<WeatherAQIMapProps> = ({
         className: 'custom-aqi-marker',
         html: `
           <div style="
-            background: ${color};
-            color: #000;
-            font-weight: 800;
+            background: #020617;
+            color: #ffffff;
+            font-family: system-ui, sans-serif;
+            font-weight: 700;
             font-size: 11px;
-            padding: 3px 7px;
-            border-radius: 20px;
-            box-shadow: 0 0 12px ${color};
-            border: 2px solid #ffffff;
-            display: flex;
+            padding: 3px 8px;
+            border-radius: 12px;
+            border: 2px solid ${color};
+            box-shadow: 0 0 10px ${color}88;
+            display: inline-flex;
             align-items: center;
-            justify-content: center;
+            gap: 4px;
             white-space: nowrap;
             cursor: pointer;
             transform: translate(-50%, -50%);
           ">
-            ${station.name.split(' ')[0]}: ${station.aqi}
+            <span style="display:inline-block; width: 7px; height: 7px; border-radius: 50%; background: ${color};"></span>
+            <span>${station.name.split(' ')[0]}:</span>
+            <span style="color:${color}; font-weight: 900;">${station.aqi}</span>
           </div>
         `,
         iconSize: [0, 0],
@@ -121,7 +151,15 @@ export const WeatherAQIMap: React.FC<WeatherAQIMapProps> = ({
       });
       marker.addTo(markersLayerRef.current!);
     });
-  }, [currentCity, onSelectStation]);
+  }, [stations, onSelectStation]);
+
+  const handleManualRefresh = async () => {
+    setIsFetchingLive(true);
+    const liveStations = await fetchLiveStationsData(currentCity.stations);
+    setStations(liveStations);
+    setHasLiveSensors(true);
+    setIsFetchingLive(false);
+  };
 
   return (
     <div className="bg-slate-900/90 border border-slate-800 rounded-2xl overflow-hidden shadow-2xl backdrop-blur-md">
@@ -132,26 +170,42 @@ export const WeatherAQIMap: React.FC<WeatherAQIMapProps> = ({
             <Layers className="w-4 h-4" />
           </div>
           <div>
-            <h3 className="text-sm font-bold text-white flex items-center gap-2">
-              Area-Wise Urban AQI & Smog Inversion Map
-              <span className="text-[10px] font-medium bg-cyan-900/60 text-cyan-300 px-2 py-0.5 rounded-full border border-cyan-700/50">
-                Live Sensor Network
-              </span>
-            </h3>
+            <div className="flex items-center gap-2">
+              <h3 className="text-sm font-bold text-white">
+                Area-Wise Urban AQI & Smog Inversion Map
+              </h3>
+              {hasLiveSensors && (
+                <span className="flex items-center gap-1 text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 px-2 py-0.5 rounded-full">
+                  <Radio className="w-2.5 h-2.5 animate-pulse text-emerald-400" />
+                  Live API Linked
+                </span>
+              )}
+            </div>
             <p className="text-xs text-slate-400">
               Interactive neighborhood air monitoring for {currentCity.name} ({currentCity.region})
             </p>
           </div>
         </div>
 
-        {/* Legend */}
-        <div className="flex items-center gap-2 text-[11px] font-medium text-slate-300 bg-slate-900/90 px-3 py-1.5 rounded-xl border border-slate-800">
-          <span className="text-slate-400">AQI Spectrum:</span>
-          <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full bg-emerald-500 inline-block"/> Good</span>
-          <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full bg-amber-500 inline-block"/> Mod</span>
-          <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full bg-orange-500 inline-block"/> Sensitive</span>
-          <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full bg-rose-500 inline-block"/> Unhealthy</span>
-          <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full bg-purple-500 inline-block"/> Hazardous</span>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={handleManualRefresh}
+            disabled={isFetchingLive}
+            className="flex items-center gap-1.5 text-xs bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 px-3 py-1.5 rounded-lg transition-all cursor-pointer disabled:opacity-50"
+          >
+            <RefreshCw className={`w-3.5 h-3.5 text-cyan-400 ${isFetchingLive ? 'animate-spin' : ''}`} />
+            <span>{isFetchingLive ? 'Updating...' : 'Refresh Station API'}</span>
+          </button>
+
+          {/* Legend */}
+          <div className="hidden sm:flex items-center gap-2 text-[11px] font-medium text-slate-300 bg-slate-900/90 px-3 py-1.5 rounded-xl border border-slate-800">
+            <span className="text-slate-400">AQI:</span>
+            <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full bg-emerald-500 inline-block"/> Good</span>
+            <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full bg-amber-500 inline-block"/> Mod</span>
+            <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full bg-orange-500 inline-block"/> Sensitive</span>
+            <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full bg-rose-500 inline-block"/> Unhealthy</span>
+            <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full bg-purple-500 inline-block"/> Hazardous</span>
+          </div>
         </div>
       </div>
 
@@ -159,7 +213,7 @@ export const WeatherAQIMap: React.FC<WeatherAQIMapProps> = ({
       <div className="relative">
         <div 
           ref={mapContainerRef} 
-          className="w-full h-[400px] z-10 bg-slate-950" 
+          className="w-full h-[420px] z-10 bg-slate-950" 
           aria-label="Area wise air quality index map"
         />
 
@@ -214,7 +268,7 @@ export const WeatherAQIMap: React.FC<WeatherAQIMapProps> = ({
         <span className="text-xs font-semibold text-slate-400 shrink-0 flex items-center gap-1">
           <MapPin className="w-3.5 h-3.5 text-cyan-400" /> Hotspot Stations:
         </span>
-        {currentCity.stations.map((st) => (
+        {stations.map((st) => (
           <button
             key={st.id}
             onClick={() => onSelectStation(st)}
@@ -236,3 +290,4 @@ export const WeatherAQIMap: React.FC<WeatherAQIMapProps> = ({
     </div>
   );
 };
+

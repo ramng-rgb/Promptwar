@@ -97,6 +97,48 @@ export const SUPPORTED_CITIES: CityConfig[] = [
   }
 ];
 
+export async function fetchLiveStationsData(stations: AreaStation[]): Promise<AreaStation[]> {
+  try {
+    if (!stations.length) return stations;
+    const lats = stations.map(s => s.lat).join(',');
+    const lngs = stations.map(s => s.lng).join(',');
+
+    const res = await fetch(
+      `https://air-quality-api.open-meteo.com/v1/air-quality?latitude=${lats}&longitude=${lngs}&current=us_aqi,pm2_5,pm10`
+    );
+
+    const data = await res.json();
+    const dataList = Array.isArray(data) ? data : [data];
+
+    return stations.map((station, index) => {
+      const reading = dataList[index]?.current;
+      if (reading) {
+        const liveAqi = Math.round(reading.us_aqi || station.aqi);
+        const livePm25 = Math.round(reading.pm2_5 || station.pm25);
+        const livePm10 = Math.round(reading.pm10 || station.pm10);
+        
+        let status = 'Moderate';
+        if (liveAqi > 300) status = 'Hazardous Smog';
+        else if (liveAqi > 200) status = 'Very Unhealthy';
+        else if (liveAqi > 150) status = 'Unhealthy';
+        else if (liveAqi > 100) status = 'Sensitive Groups';
+
+        return {
+          ...station,
+          aqi: liveAqi,
+          pm25: livePm25,
+          pm10: livePm10,
+          status,
+        };
+      }
+      return station;
+    });
+  } catch (err) {
+    console.error('Failed to fetch live station AQI:', err);
+    return stations;
+  }
+}
+
 export async function fetchLiveWeatherData(lat: number, lng: number) {
   try {
     const [airRes, weatherRes] = await Promise.all([
