@@ -1,3 +1,67 @@
+export interface GeocodingResult {
+  id: number;
+  name: string;
+  latitude: number;
+  longitude: number;
+  country?: string;
+  admin1?: string;
+}
+
+export async function searchLocations(query: string): Promise<GeocodingResult[]> {
+  if (!query || query.trim().length < 2) return [];
+  try {
+    const res = await fetch(
+      `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(
+        query.trim()
+      )}&count=6&language=en&format=json`
+    );
+    const data = await res.json();
+    return data.results || [];
+  } catch (err) {
+    console.error('Geocoding search failed:', err);
+    return [];
+  }
+}
+
+export async function reverseGeocode(lat: number, lng: number): Promise<{ name: string; region: string }> {
+  try {
+    const res = await fetch(
+      `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`
+    );
+    const data = await res.json();
+    const city = data.address?.city || data.address?.town || data.address?.state_district || 'My Location';
+    const state = data.address?.state || '';
+    const country = data.address?.country || '';
+    const region = [state, country].filter(Boolean).join(', ') || 'Local Coordinates';
+    return { name: city, region };
+  } catch {
+    return { name: 'Current Location', region: `${lat.toFixed(2)}°N, ${lng.toFixed(2)}°E` };
+  }
+}
+
+export function generateLocalStations(cityLat: number, cityLng: number, cityName: string): AreaStation[] {
+  // Generate 4-5 cardinal micro-climate sensor nodes around the searched coordinates
+  const offsets = [
+    { name: `${cityName} Center`, dLat: 0, dLng: 0, source: 'Central Urban Core' },
+    { name: `${cityName} North`, dLat: 0.045, dLng: 0.015, source: 'Commercial / Transit Corridor' },
+    { name: `${cityName} East`, dLat: 0.015, dLng: 0.05, source: 'Industrial / Logistics Bypass' },
+    { name: `${cityName} South`, dLat: -0.04, dLng: -0.01, source: 'Residential / Canopy Sector' },
+    { name: `${cityName} West`, dLat: -0.01, dLng: -0.045, source: 'Highway / Outer Ring Road' },
+  ];
+
+  return offsets.map((off, index) => ({
+    id: `local-station-${index}-${Date.now()}`,
+    name: off.name,
+    lat: Number((cityLat + off.dLat).toFixed(4)),
+    lng: Number((cityLng + off.dLng).toFixed(4)),
+    aqi: 120, // Initial placeholder, immediately updated by live API
+    pm25: 45,
+    pm10: 75,
+    status: 'Monitoring',
+    dominantSource: off.source,
+  }));
+}
+
 export interface AreaStation {
   id: string;
   name: string;

@@ -15,7 +15,14 @@ import { ActionCardsSection } from './components/ActionCardsSection';
 import { ImpactDashboard } from './components/ImpactDashboard';
 import { GenAIAssistant } from './components/GenAIAssistant';
 import { WeatherAQIMap } from './components/WeatherAQIMap';
-import { SUPPORTED_CITIES, fetchLiveWeatherData, AreaStation } from './services/weatherService';
+import { 
+  SUPPORTED_CITIES, 
+  fetchLiveWeatherData, 
+  AreaStation, 
+  CityConfig,
+  reverseGeocode, 
+  generateLocalStations 
+} from './services/weatherService';
 
 export const App: React.FC = () => {
   const [selectedCityKey, setSelectedCityKey] = useState<string>('delhi-ncr');
@@ -23,9 +30,11 @@ export const App: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'dashboard' | 'map' | 'ai-assistant'>('dashboard');
   const [actionCategoryFilter, setActionCategoryFilter] = useState<string>('all');
   const [isLoadingLive, setIsLoadingLive] = useState<boolean>(false);
+  const [isLocating, setIsLocating] = useState<boolean>(false);
   const [selectedStation, setSelectedStation] = useState<AreaStation | null>(null);
 
-  const currentCityConfig = SUPPORTED_CITIES.find(c => c.key === selectedCityKey) || SUPPORTED_CITIES[0];
+  // Dynamic active city configuration supporting custom search & GPS location
+  const [activeCityConfig, setActiveCityConfig] = useState<CityConfig>(SUPPORTED_CITIES[0]);
 
   // Helper to calculate category from US AQI
   const getCategoryFromAQI = (aqi: number): AirQualityData['category'] => {
@@ -37,25 +46,21 @@ export const App: React.FC = () => {
     return 'Severe Smog / Hazardous';
   };
 
-  // Sync Live Data from Open-Meteo Weather & Air Quality API
-  const syncLiveData = useCallback(async (cityKey: string) => {
-    const config = SUPPORTED_CITIES.find(c => c.key === cityKey);
-    if (!config) return;
-
+  // Sync Live Data from Open-Meteo Weather & Air Quality API for coordinates
+  const syncCoordinatesData = useCallback(async (lat: number, lng: number, cityName: string, regionName: string) => {
     setIsLoadingLive(true);
-    const result = await fetchLiveWeatherData(config.lat, config.lng);
+    const result = await fetchLiveWeatherData(lat, lng);
     setIsLoadingLive(false);
 
     if (result.success && result.air && result.air.current && result.weather && result.weather.current) {
-      const liveAqi = Math.round(result.air.current.us_aqi || 200);
-      const livePm25 = Math.round(result.air.current.pm2_5 || 100);
-      const livePm10 = Math.round(result.air.current.pm10 || 150);
-      const temp = Math.round(result.weather.current.temperature_2m || 15);
-      const humidity = Math.round(result.weather.current.relative_humidity_2m || 70);
-      const windKmh = result.weather.current.wind_speed_10m || 2;
+      const liveAqi = Math.round(result.air.current.us_aqi || 120);
+      const livePm25 = Math.round(result.air.current.pm2_5 || 45);
+      const livePm10 = Math.round(result.air.current.pm10 || 70);
+      const temp = Math.round(result.weather.current.temperature_2m || 20);
+      const humidity = Math.round(result.weather.current.relative_humidity_2m || 60);
+      const windKmh = result.weather.current.wind_speed_10m || 4;
       const isLowWind = windKmh < 5.0;
 
-      // Extract hourly forecast if available
       const hourlyAqi = result.air.hourly?.us_aqi || [];
       const forecastSlots = [6, 9, 12, 15, 18, 21].map(hour => {
         const slotAqi = hourlyAqi[hour] || Math.round(liveAqi * (0.8 + Math.random() * 0.4));
@@ -72,22 +77,22 @@ export const App: React.FC = () => {
       });
 
       setAqiData({
-        city: config.name,
-        region: config.region,
+        city: cityName,
+        region: regionName,
         aqi: liveAqi,
         category: getCategoryFromAQI(liveAqi),
-        primaryPollutant: livePm25 > livePm10 ? 'PM2.5 (Fine Particulate)' : 'PM10 (Coarse Inhalable)',
+        primaryPollutant: livePm25 > livePm10 ? 'PM2.5 (Fine Particulate)' : 'PM10 (Coarse Dust)',
         pm25: livePm25,
         pm10: livePm10,
         temperature: temp,
         humidity: humidity,
         inversionWarning: isLowWind && temp < 18,
-        windSpeed: `${windKmh} km/h (${isLowWind ? 'Calm Inversion Trap' : 'Moderate Flow'})`,
+        windSpeed: `${windKmh} km/h (${isLowWind ? 'Calm Inversion Trap' : 'Active Air Mixing'})`,
         healthAdvisory: liveAqi > 300 
-          ? `Emergency level air quality in ${config.name}. Severe particulate accumulation. N95/FFP2 masks essential.`
+          ? `Emergency level air quality in ${cityName}. Severe particulate accumulation. N95/FFP2 masks essential.`
           : liveAqi > 150 
-          ? `Unhealthy air pool detected in ${config.name}. Avoid intense outdoor exercise; engage air scrubbers.`
-          : `Moderate conditions in ${config.name}. Keep living areas ventilated during midday.`,
+          ? `Unhealthy air pool detected in ${cityName}. Avoid intense outdoor exercise; engage air scrubbers.`
+          : `Moderate conditions in ${cityName}. Good ventilation during midday hours.`,
         isLive: true,
         lastUpdated: new Date().toLocaleTimeString(),
         gases: {
@@ -101,12 +106,84 @@ export const App: React.FC = () => {
     }
   }, []);
 
+  // Preset City Change
+  const handleCityChange = (newCityKey: string) => {
+    setSelectedCityKey(newCityKey);
+    setSelectedStation(null);
+    const config = SUPPORTED_CITIES.find(c => c.key === newCityKey);
+    if (config) {
+      setActiveCityConfig(config);
+      if (CITIES_DATA[newCityKey]) {
+        setAqiData(CITIES_DATA[newCityKey]);
+      }
+      syncCoordinatesData(config.lat, config.lng, config.name, config.region);
+    }
+  };
+
+  // Custom Search Location Pick
+  const handleSelectCustomLocation = (lat: number, lng: number, name: string, region: string) => {
+    setSelectedCityKey('custom');
+    setSelectedStation(null);
+
+    const customStations = generateLocalStations(lat, lng, name);
+    const newConfig: CityConfig = {
+      key: `custom-${Date.now()}`,
+      name,
+      region,
+      lat,
+      lng,
+      stations: customStations,
+    };
+
+    setActiveCityConfig(newConfig);
+    syncCoordinatesData(lat, lng, name, region);
+  };
+
+  // Browser Geolocation Detection
+  const handleUseCurrentLocation = () => {
+    if (!navigator.geolocation) {
+      alert('Geolocation is not supported by your current browser.');
+      return;
+    }
+
+    setIsLocating(true);
+    navigator.geolocation.getCurrentPosition(
+      async (pos) => {
+        const { latitude, longitude } = pos.coords;
+        const { name, region } = await reverseGeocode(latitude, longitude);
+
+        setSelectedCityKey('custom');
+        setSelectedStation(null);
+
+        const customStations = generateLocalStations(latitude, longitude, name);
+        const newConfig: CityConfig = {
+          key: `gps-${Date.now()}`,
+          name,
+          region,
+          lat: latitude,
+          lng: longitude,
+          stations: customStations,
+        };
+
+        setActiveCityConfig(newConfig);
+        await syncCoordinatesData(latitude, longitude, name, region);
+        setIsLocating(false);
+      },
+      (err) => {
+        console.warn('Geolocation access issue:', err);
+        setIsLocating(false);
+        alert('Could not retrieve GPS coordinates. You can type any city or locality in the Search box!');
+      },
+      { timeout: 10000 }
+    );
+  };
+
   useEffect(() => {
-    syncLiveData(selectedCityKey);
-  }, [selectedCityKey, syncLiveData]);
+    syncCoordinatesData(activeCityConfig.lat, activeCityConfig.lng, activeCityConfig.name, activeCityConfig.region);
+  }, []);
 
   const [familyProfile, setFamilyProfile] = useState<FamilyProfile>({
-    name: 'Gupta Household',
+    name: 'Household Profile',
     membersCount: 4,
     hasChildren: true,
     hasElderly: true,
@@ -118,15 +195,6 @@ export const App: React.FC = () => {
   });
 
   const [actions, setActions] = useState<SustainableAction[]>(INITIAL_SUSTAINABLE_ACTIONS);
-
-  const handleCityChange = (newCityKey: string) => {
-    setSelectedCityKey(newCityKey);
-    setSelectedStation(null);
-    if (CITIES_DATA[newCityKey]) {
-      setAqiData(CITIES_DATA[newCityKey]);
-    }
-    syncLiveData(newCityKey);
-  };
 
   const handleToggleAction = (actionId: string) => {
     setActions(prev =>
@@ -213,7 +281,10 @@ export const App: React.FC = () => {
           data={aqiData}
           selectedCityKey={selectedCityKey}
           onCityChange={handleCityChange}
-          onRefreshLive={() => syncLiveData(selectedCityKey)}
+          onSelectCustomLocation={handleSelectCustomLocation}
+          onUseCurrentLocation={handleUseCurrentLocation}
+          isLocating={isLocating}
+          onRefreshLive={() => syncCoordinatesData(activeCityConfig.lat, activeCityConfig.lng, activeCityConfig.name, activeCityConfig.region)}
           isLoadingLive={isLoadingLive}
         />
 
@@ -224,7 +295,7 @@ export const App: React.FC = () => {
 
             {/* Area-Wise AQI Map Preview Component */}
             <WeatherAQIMap
-              currentCity={currentCityConfig}
+              currentCity={activeCityConfig}
               selectedStation={selectedStation}
               onSelectStation={setSelectedStation}
               liveCityAQI={aqiData.aqi}
@@ -249,7 +320,7 @@ export const App: React.FC = () => {
         {activeTab === 'map' && (
           <div className="space-y-4">
             <WeatherAQIMap
-              currentCity={currentCityConfig}
+              currentCity={activeCityConfig}
               selectedStation={selectedStation}
               onSelectStation={setSelectedStation}
               liveCityAQI={aqiData.aqi}
