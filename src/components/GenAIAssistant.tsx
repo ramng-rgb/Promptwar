@@ -35,7 +35,9 @@ export const GenAIAssistant: React.FC<GenAIAssistantProps> = ({
   const chatBottomRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    chatBottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+    if (chatBottomRef.current && typeof chatBottomRef.current.scrollIntoView === 'function') {
+      chatBottomRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
   }, [messages, isTyping]);
 
   const handleSend = (textToSend?: string) => {
