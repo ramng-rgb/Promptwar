@@ -4,9 +4,33 @@
 
 @layer base {
   body {
-    @apply bg-slate-950 text-slate-100 antialiased;
+    @apply bg-[#060a12] text-slate-100 antialiased;
     font-feature-settings: "cv02", "cv03", "cv04", "cv11";
   }
+}
+
+/* Atmospheric Sub-Surface Smog Ambient Backing */
+.ambient-smog-backdrop {
+  background: 
+    radial-gradient(ellipse 65% 50% at 50% -10%, rgba(14, 165, 233, 0.12), transparent),
+    radial-gradient(ellipse 45% 35% at 90% 20%, rgba(99, 102, 241, 0.08), transparent),
+    radial-gradient(ellipse 50% 40% at 10% 85%, rgba(225, 29, 72, 0.06), transparent),
+    #060a12;
+}
+
+/* Glass-Hud Surface Panel */
+.hud-panel {
+  background: rgba(10, 16, 29, 0.72);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+.hud-panel-active {
+  background: rgba(14, 23, 42, 0.85);
+  border-color: rgba(14, 165, 233, 0.4);
+  box-shadow: 0 0 25px -5px rgba(14, 165, 233, 0.2), inset 0 1px 0 rgba(14, 165, 233, 0.2);
 }
 
 /* Custom subtle scrollbar */

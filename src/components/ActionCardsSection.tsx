@@ -98,10 +98,10 @@ export const ActionCardsSection: React.FC<ActionCardsSectionProps> = ({
           return (
             <div
               key={action.id}
-              className={`rounded-2xl border transition-all duration-200 backdrop-blur-sm p-4 relative ${
+              className={`rounded-3xl border transition-all duration-300 p-5 relative ${
                 action.implemented
-                  ? 'bg-slate-900/90 border-emerald-500/50 shadow-md ring-1 ring-emerald-500/20'
-                  : 'bg-slate-900/60 border-slate-800 hover:border-slate-700'
+                  ? 'bg-slate-900/90 border-emerald-500/50 shadow-xl ring-1 ring-emerald-500/30'
+                  : 'bg-slate-950/70 border-white/5 hover:border-slate-700 shadow-md'
               }`}
             >
               <div className="flex items-start justify-between gap-3">

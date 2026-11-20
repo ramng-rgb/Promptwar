@@ -97,10 +97,13 @@ export const AQIOverviewCard: React.FC<AQIOverviewCardProps> = ({
   return (
     <section 
       aria-labelledby="aqi-heading"
-      className={`rounded-2xl border ${aqiStyle.border} ${aqiStyle.bg} backdrop-blur-md p-6 relative overflow-hidden transition-all duration-300 shadow-xl`}
+      className="hud-panel rounded-3xl p-6 sm:p-7 relative overflow-hidden transition-all duration-300 shadow-2xl"
     >
-      {/* Background radial gradient indicator */}
-      <div className="absolute -right-20 -top-20 w-72 h-72 rounded-full bg-cyan-500/10 blur-3xl pointer-events-none" />
+      {/* Dynamic atmospheric radial haze matching live hazard level */}
+      <div 
+        className="absolute -right-16 -top-16 w-80 h-80 rounded-full blur-3xl opacity-25 pointer-events-none transition-all duration-700" 
+        style={{ backgroundColor: data.aqi > 200 ? '#ef4444' : data.aqi > 100 ? '#f59e0b' : '#10b981' }}
+      />
 
       {/* Header controls: City Selector, Search & Geolocation */}
       <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
@@ -236,54 +239,69 @@ export const AQIOverviewCard: React.FC<AQIOverviewCardProps> = ({
       {/* Hero Metric Grid */}
       <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-center">
         {/* Left: Main AQI Display */}
-        <div className="md:col-span-4 flex flex-col items-start bg-slate-950/70 p-5 rounded-xl border border-white/5">
-          <span className="text-xs text-slate-400 font-medium tracking-wide uppercase">Real-time Air Quality Index</span>
-          <div className="flex items-baseline gap-3 my-2">
-            <span className={`text-6xl font-black tracking-tight ${aqiStyle.text}`} aria-label={`AQI is ${data.aqi}`}>
+        <div className="md:col-span-4 flex flex-col items-start bg-slate-950/80 p-5 rounded-2xl border border-white/5 shadow-inner">
+          <span className="text-[11px] text-slate-400 font-bold tracking-widest uppercase flex items-center gap-1.5">
+            <span className="w-2 h-2 rounded-full animate-ping" style={{ backgroundColor: aqiStyle.badge.includes('bg-red') ? '#ef4444' : '#0ea5e9' }} />
+            Real-time Air Quality Index
+          </span>
+          <div className="flex items-baseline gap-3 my-2.5">
+            <span className={`text-6xl sm:text-7xl font-black tracking-tighter ${aqiStyle.text}`} aria-label={`AQI is ${data.aqi}`}>
               {data.aqi}
             </span>
-            <span className="text-sm font-semibold text-slate-400">US-AQI</span>
+            <span className="text-xs font-mono font-bold text-slate-400 uppercase tracking-widest bg-slate-900/80 px-2 py-1 rounded-md border border-slate-800">
+              US-AQI
+            </span>
           </div>
-          <span className={`inline-block px-3 py-1 rounded-full text-xs uppercase tracking-wider ${aqiStyle.badge}`}>
+          <span className={`inline-block px-3.5 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider shadow-sm ${aqiStyle.badge}`}>
             {data.category}
           </span>
-          <p className="text-xs text-slate-400 mt-3 flex items-center gap-1.5">
-            <Info className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-            Primary Threat: <strong className="text-slate-200">{data.primaryPollutant}</strong> (Fine Combustion Particles)
+          <p className="text-xs text-slate-400 mt-3.5 flex items-center gap-1.5 pt-3 border-t border-slate-900 w-full">
+            <Info className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
+            <span>Primary Threat: <strong className="text-slate-200">{data.primaryPollutant} (Fine Combustion Particles)</strong></span>
           </p>
         </div>
 
         {/* Center: Detailed Pollutants & Weather Atmospheric Factors */}
         <div className="md:col-span-8 grid grid-cols-2 sm:grid-cols-4 gap-3">
-          <div className="bg-slate-900/80 p-3.5 rounded-xl border border-slate-800">
-            <span className="text-xs text-slate-400 block">PM2.5 Concentration</span>
-            <span className="text-xl font-bold text-slate-100">{data.pm25}</span>
-            <span className="text-[11px] text-slate-400 block mt-0.5">µg/m³ ({(data.pm25 / 15).toFixed(1)}x WHO Limit)</span>
+          <div className="bg-slate-950/70 p-4 rounded-2xl border border-white/5 hover:border-cyan-500/30 transition-all">
+            <span className="text-[11px] font-semibold text-slate-400 block uppercase tracking-wider">PM2.5 Level</span>
+            <div className="flex items-baseline gap-1 mt-1.5">
+              <span className="text-2xl font-black text-slate-100">{data.pm25}</span>
+              <span className="text-xs text-slate-400 font-mono">µg/m³</span>
+            </div>
+            <span className="text-[11px] text-amber-400 font-semibold block mt-1">{(data.pm25 / 15).toFixed(1)}x WHO Limit</span>
           </div>
 
-          <div className="bg-slate-900/80 p-3.5 rounded-xl border border-slate-800">
-            <span className="text-xs text-slate-400 block">PM10 Coarse</span>
-            <span className="text-xl font-bold text-slate-100">{data.pm10}</span>
-            <span className="text-[11px] text-slate-400 block mt-0.5">µg/m³ (Dust & Smog)</span>
+          <div className="bg-slate-950/70 p-4 rounded-2xl border border-white/5 hover:border-cyan-500/30 transition-all">
+            <span className="text-[11px] font-semibold text-slate-400 block uppercase tracking-wider">PM10 Coarse</span>
+            <div className="flex items-baseline gap-1 mt-1.5">
+              <span className="text-2xl font-black text-slate-100">{data.pm10}</span>
+              <span className="text-xs text-slate-400 font-mono">µg/m³</span>
+            </div>
+            <span className="text-[11px] text-slate-400 block mt-1">Road Dust & Soot</span>
           </div>
 
-          <div className="bg-slate-900/80 p-3.5 rounded-xl border border-slate-800">
-            <span className="text-xs text-slate-400 flex items-center gap-1">
-              <Thermometer className="w-3.5 h-3.5 text-cyan-400" /> Temp & Fog
+          <div className="bg-slate-950/70 p-4 rounded-2xl border border-white/5 hover:border-cyan-500/30 transition-all">
+            <span className="text-[11px] font-semibold text-slate-400 flex items-center gap-1 uppercase tracking-wider">
+              <Thermometer className="w-3.5 h-3.5 text-cyan-400" /> Temperature
             </span>
-            <span className="text-xl font-bold text-slate-100">{data.temperature}°C</span>
-            <span className="text-[11px] text-slate-400 block mt-0.5">{data.humidity}% Humidity</span>
+            <div className="flex items-baseline gap-1 mt-1.5">
+              <span className="text-2xl font-black text-slate-100">{data.temperature}°</span>
+              <span className="text-xs text-slate-400 font-mono">C</span>
+            </div>
+            <span className="text-[11px] text-slate-400 block mt-1">{data.humidity}% Humidity</span>
           </div>
 
-          <div className="bg-slate-900/80 p-3.5 rounded-xl border border-slate-800">
-            <span className="text-xs text-slate-400 flex items-center gap-1">
-              <Wind className="w-3.5 h-3.5 text-cyan-400" /> Wind Dispersion
+          <div className="bg-slate-950/70 p-4 rounded-2xl border border-white/5 hover:border-cyan-500/30 transition-all">
+            <span className="text-[11px] font-semibold text-slate-400 flex items-center gap-1 uppercase tracking-wider">
+              <Wind className="w-3.5 h-3.5 text-cyan-400" /> Wind Velocity
             </span>
-            <span className="text-sm font-semibold text-slate-200 mt-1 block truncate" title={data.windSpeed}>
-              {data.windSpeed}
-            </span>
-            <span className="text-[10px] text-amber-400/90 block mt-0.5">
-              {parseFloat(data.windSpeed) < 5 ? 'Stagnant Air Pool' : 'Active Mixing'}
+            <div className="flex items-baseline gap-1 mt-1.5">
+              <span className="text-xl font-black text-slate-100 truncate" title={data.windSpeed}>{data.windSpeed.split(' ')[0]}</span>
+              <span className="text-xs text-slate-400 font-mono">km/h</span>
+            </div>
+            <span className="text-[11px] text-amber-400 font-semibold block mt-1 truncate">
+              {parseFloat(data.windSpeed) < 5 ? 'Ground Trap' : 'Ventilated'}
             </span>
           </div>
         </div>
@@ -313,24 +331,24 @@ export const AQIOverviewCard: React.FC<AQIOverviewCardProps> = ({
             return (
               <div 
                 key={index}
-                className={`p-2.5 rounded-lg border text-left transition-all ${
+                className={`p-3 rounded-2xl border text-left transition-all duration-200 ${
                   isLowest 
-                    ? 'bg-cyan-950/40 border-cyan-500/50 ring-1 ring-cyan-500/30' 
-                    : 'bg-slate-900/60 border-slate-800/80'
+                    ? 'bg-cyan-950/50 border-cyan-400/60 ring-1 ring-cyan-400/40 shadow-lg shadow-cyan-950/50' 
+                    : 'bg-slate-950/70 border-white/5 hover:border-slate-700'
                 }`}
               >
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-mono font-bold text-slate-300">{slot.time}</span>
-                  <span className={`text-xs font-bold ${getAQIColor(slot.aqi).text}`}>
+                  <span className={`text-xs font-black ${getAQIColor(slot.aqi).text}`}>
                     {slot.aqi} AQI
                   </span>
                 </div>
                 {isLowest && (
-                  <span className="inline-block mt-1 text-[10px] bg-cyan-500/20 text-cyan-300 px-1.5 py-0.2 rounded font-semibold">
+                  <span className="inline-block mt-1.5 text-[10px] bg-cyan-400 text-slate-950 font-black px-2 py-0.5 rounded-full uppercase tracking-wider">
                     Optimal Window
                   </span>
                 )}
-                <p className="text-[11px] text-slate-400 mt-1 line-clamp-2 leading-tight">
+                <p className="text-[11px] text-slate-300 mt-1.5 line-clamp-2 leading-snug">
                   {slot.suitableFor}
                 </p>
               </div>

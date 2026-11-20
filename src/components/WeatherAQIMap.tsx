@@ -162,7 +162,7 @@ export const WeatherAQIMap: React.FC<WeatherAQIMapProps> = ({
   };
 
   return (
-    <div className="bg-slate-900/90 border border-slate-800 rounded-2xl overflow-hidden shadow-2xl backdrop-blur-md">
+    <div className="hud-panel rounded-3xl overflow-hidden shadow-2xl">
       {/* Header bar */}
       <div className="p-4 border-b border-slate-800 flex flex-wrap items-center justify-between gap-3 bg-slate-950/80">
         <div className="flex items-center gap-2.5">

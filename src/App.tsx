@@ -210,7 +210,7 @@ export const App: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-white flex flex-col selection:bg-cyan-500 selection:text-slate-950 font-sans">
+    <div className="min-h-screen ambient-smog-backdrop text-white flex flex-col selection:bg-cyan-500 selection:text-slate-950 font-sans">
       {/* Navigation Header */}
       <header className="sticky top-0 z-50 bg-slate-950/85 backdrop-blur-md border-b border-slate-800/80 px-4 sm:px-8 py-3.5">
         <div className="max-w-7xl mx-auto flex items-center justify-between">

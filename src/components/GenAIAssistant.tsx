@@ -113,7 +113,7 @@ export const GenAIAssistant: React.FC<GenAIAssistantProps> = ({
   ];
 
   return (
-    <div className="bg-slate-900/80 border border-slate-800 rounded-2xl flex flex-col h-[600px] shadow-2xl backdrop-blur-md overflow-hidden">
+    <div className="hud-panel rounded-3xl flex flex-col h-[620px] shadow-2xl overflow-hidden">
       {/* Header */}
       <div className="p-4 border-b border-slate-800 bg-slate-950/70 flex items-center justify-between">
         <div className="flex items-center gap-3">
