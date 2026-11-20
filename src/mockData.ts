@@ -3,7 +3,7 @@ import { AirQualityData, SustainableAction } from './types';
 export const CITIES_DATA: Record<string, AirQualityData> = {
   'delhi-ncr': {
     city: 'Delhi-NCR',
-    region: 'Indo-Gangetic Basin',
+    region: 'Indo-Gangetic Basin, India',
     aqi: 388,
     category: 'Severe Smog / Hazardous',
     primaryPollutant: 'PM2.5',
@@ -21,6 +21,25 @@ export const CITIES_DATA: Record<string, AirQualityData> = {
       { time: '15:00', aqi: 290, suitableFor: 'Best daytime window for essential errands' },
       { time: '18:00', aqi: 360, suitableFor: 'Evening inversion begins - seal perimeter' },
       { time: '21:00', aqi: 395, suitableFor: 'Night accumulation spike' },
+    ],
+  },
+  'mumbai': {
+    city: 'Mumbai',
+    region: 'Konkan Coast, India',
+    aqi: 172,
+    category: 'Unhealthy',
+    primaryPollutant: 'PM2.5 & NO2',
+    pm25: 86,
+    pm10: 154,
+    temperature: 28,
+    humidity: 72,
+    inversionWarning: false,
+    windSpeed: '9.5 km/h',
+    healthAdvisory: 'Elevated coastal haze and roadway particulate. Sensitive groups should wear masks along construction corridors.',
+    forecast: [
+      { time: '08:00', aqi: 185, suitableFor: 'Morning traffic spike' },
+      { time: '13:00', aqi: 155, suitableFor: 'Afternoon marine breeze' },
+      { time: '18:00', aqi: 178, suitableFor: 'Evening congestion' },
     ],
   },
   'lahore': {

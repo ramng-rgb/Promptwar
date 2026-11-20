@@ -11,6 +11,14 @@ export interface AirQualityData {
   inversionWarning: boolean;
   windSpeed: string;
   healthAdvisory: string;
+  isLive?: boolean;
+  lastUpdated?: string;
+  gases?: {
+    co?: number;
+    no2?: number;
+    so2?: number;
+    o3?: number;
+  };
   forecast: {
     time: string;
     aqi: number;

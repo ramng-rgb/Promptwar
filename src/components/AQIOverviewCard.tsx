@@ -6,7 +6,9 @@ import {
   ShieldAlert, 
   Info,
   Clock,
-  MapPin
+  MapPin,
+  RefreshCw,
+  Radio
 } from 'lucide-react';
 import { AirQualityData } from '../types';
 
@@ -14,12 +16,16 @@ interface AQIOverviewCardProps {
   data: AirQualityData;
   onCityChange: (cityKey: string) => void;
   selectedCityKey: string;
+  onRefreshLive?: () => void;
+  isLoadingLive?: boolean;
 }
 
 export const AQIOverviewCard: React.FC<AQIOverviewCardProps> = ({
   data,
   onCityChange,
   selectedCityKey,
+  onRefreshLive,
+  isLoadingLive,
 }) => {
   // Determine color theme based on AQI level
   const getAQIColor = (aqi: number) => {
@@ -60,6 +66,7 @@ export const AQIOverviewCard: React.FC<AQIOverviewCardProps> = ({
                 aria-label="Select urban location for air quality index"
               >
                 <option value="delhi-ncr">Delhi-NCR (Indo-Gangetic Basin)</option>
+                <option value="mumbai">Mumbai (Coastal Konkan)</option>
                 <option value="lahore">Lahore (Punjab Plains)</option>
                 <option value="salt-lake-city">Salt Lake City (Wasatch Inversion)</option>
                 <option value="bakersfield">Bakersfield (Central Valley)</option>
@@ -68,19 +75,39 @@ export const AQIOverviewCard: React.FC<AQIOverviewCardProps> = ({
               <span className="text-xs px-2.5 py-0.5 rounded-full bg-slate-800/80 border border-slate-700 text-slate-300">
                 {data.region}
               </span>
+              {data.isLive && (
+                <span className="flex items-center gap-1 text-[10px] bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 px-2 py-0.5 rounded-full font-bold">
+                  <Radio className="w-2.5 h-2.5 animate-pulse text-emerald-400" />
+                  LIVE OPEN-METEO
+                </span>
+              )}
             </div>
           </div>
         </div>
 
-        {data.inversionWarning && (
-          <div 
-            role="alert"
-            className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-red-950/80 border border-red-500/50 text-red-200 text-xs font-medium shadow-sm animate-pulse"
-          >
-            <AlertTriangle className="w-4 h-4 text-red-400 shrink-0" aria-hidden="true" />
-            <span><strong>Thermal Inversion Active:</strong> Ground cold air trap active until mid-day</span>
-          </div>
-        )}
+        <div className="flex items-center gap-2">
+          {onRefreshLive && (
+            <button
+              onClick={onRefreshLive}
+              disabled={isLoadingLive}
+              className="flex items-center gap-1.5 text-xs bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 px-3 py-1.5 rounded-lg transition-all cursor-pointer disabled:opacity-50"
+              title="Fetch latest meteorological and atmospheric sensor data"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 text-cyan-400 ${isLoadingLive ? 'animate-spin' : ''}`} />
+              <span>{isLoadingLive ? 'Updating...' : 'Sync Live Weather'}</span>
+            </button>
+          )}
+
+          {data.inversionWarning && (
+            <div 
+              role="alert"
+              className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-red-950/80 border border-red-500/50 text-red-200 text-xs font-medium shadow-sm animate-pulse"
+            >
+              <AlertTriangle className="w-4 h-4 text-red-400 shrink-0" aria-hidden="true" />
+              <span><strong>Thermal Inversion Active:</strong> Ground cold air trap active</span>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Hero Metric Grid */}
@@ -132,7 +159,9 @@ export const AQIOverviewCard: React.FC<AQIOverviewCardProps> = ({
             <span className="text-sm font-semibold text-slate-200 mt-1 block truncate" title={data.windSpeed}>
               {data.windSpeed}
             </span>
-            <span className="text-[10px] text-amber-400/90 block mt-0.5">Stagnant Air Pool</span>
+            <span className="text-[10px] text-amber-400/90 block mt-0.5">
+              {parseFloat(data.windSpeed) < 5 ? 'Stagnant Air Pool' : 'Active Mixing'}
+            </span>
           </div>
         </div>
       </div>
