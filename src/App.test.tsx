@@ -223,19 +223,19 @@ describe('Feature 5: GenAI Smog Assistant Interaction', () => {
 });
 
 describe('Feature 6: End-to-End App Navigation & Integration', () => {
-  it('switches between Overview & Actions, Area AQI Map, and GenAI tabs', () => {
+  it('switches between Dashboard, Map, and GenAI tabs', () => {
     render(<App />);
 
-    // Initially in Overview
+    // Initially in Dashboard
     expect(screen.getByText(/Direct Impact & Emission Offset Ledger/i)).toBeInTheDocument();
 
     // Click Map Tab
-    const mapTab = screen.getByRole('button', { name: /area aqi map/i });
+    const mapTab = screen.getAllByRole('button', { name: /^map$/i })[0];
     fireEvent.click(mapTab);
-    expect(screen.getByText(/Urban Micro-Climate Stagnation/i)).toBeInTheDocument();
+    expect(screen.getByText(/Urban Basin Trap Dynamics/i)).toBeInTheDocument();
 
     // Click GenAI Tab
-    const aiTab = screen.getByRole('button', { name: /genai smog advisor/i });
+    const aiTab = screen.getByRole('button', { name: /genai advisor/i });
     fireEvent.click(aiTab);
     expect(screen.getByText(/AeroPulse GenAI Smog Advisor/i)).toBeInTheDocument();
   });

@@ -1,96 +1,221 @@
 import React from 'react';
+import { 
+  ChevronRight, 
+  Smartphone, 
+  ChevronLeft, 
+  Wind, 
+  CloudFog, 
+  Flame, 
+  Sun 
+} from 'lucide-react';
 import { PollutantDetail } from '../types';
-import { Gauge, AlertTriangle, ShieldCheck } from 'lucide-react';
 
 interface PollutantBreakdownGridProps {
   pollutants: PollutantDetail[];
+  cityName?: string;
 }
 
-export const PollutantBreakdownGrid: React.FC<PollutantBreakdownGridProps> = ({ pollutants }) => {
-  const getStatusColor = (status: PollutantDetail['status']) => {
-    switch (status) {
-      case 'Good':
-        return { text: 'text-emerald-400', bg: 'bg-emerald-500/15', border: 'border-emerald-500/40', badge: 'bg-emerald-500 text-black' };
-      case 'Moderate':
-        return { text: 'text-amber-400', bg: 'bg-amber-500/15', border: 'border-amber-500/40', badge: 'bg-amber-500 text-black' };
-      case 'Poor':
-        return { text: 'text-orange-400', bg: 'bg-orange-500/15', border: 'border-orange-500/40', badge: 'bg-orange-500 text-white' };
-      case 'Unhealthy':
-        return { text: 'text-rose-400', bg: 'bg-rose-500/15', border: 'border-rose-500/40', badge: 'bg-rose-500 text-white' };
-      case 'Severe':
-        return { text: 'text-purple-400', bg: 'bg-purple-950/60', border: 'border-purple-600/50', badge: 'bg-purple-600 text-white' };
-    }
-  };
+export const PollutantBreakdownGrid: React.FC<PollutantBreakdownGridProps> = ({ 
+  pollutants, 
+  cityName = 'Noida' 
+}) => {
+  // Find individual pollutants with fallbacks
+  const pm25 = pollutants.find(p => p.code === 'pm25') || { value: 120, unit: 'µg/m³' };
+  const pm10 = pollutants.find(p => p.code === 'pm10') || { value: 165, unit: 'µg/m³' };
+  const co = pollutants.find(p => p.code === 'co') || { value: 1112, unit: 'ppb' };
+  const so2 = pollutants.find(p => p.code === 'so2') || { value: 5, unit: 'ppb' };
+  const no2 = pollutants.find(p => p.code === 'no2') || { value: 28, unit: 'ppb' };
+  const o3 = pollutants.find(p => p.code === 'o3') || { value: 24, unit: 'ppb' };
+
+  const cards = [
+    {
+      id: 'pm25',
+      title: 'Particulate Matter',
+      code: '(PM2.5)',
+      value: pm25.value,
+      unit: 'µg/m³',
+      borderColor: 'border-[#e11d48]',
+      icon: <Wind className="w-5 h-5 text-slate-400" />,
+      hasAlert: false,
+    },
+    {
+      id: 'pm10',
+      title: 'Particulate Matter',
+      code: '(PM10)',
+      value: pm10.value,
+      unit: 'µg/m³',
+      borderColor: 'border-[#f97316]',
+      icon: <CloudFog className="w-5 h-5 text-slate-400" />,
+      hasAlert: true,
+    },
+    {
+      id: 'co',
+      title: 'Carbon Monoxide',
+      code: '(CO)',
+      value: co.value,
+      unit: 'ppb',
+      borderColor: 'border-[#10b981]',
+      icon: <Flame className="w-5 h-5 text-slate-400" />,
+      hasAlert: false,
+    },
+    {
+      id: 'so2',
+      title: 'Sulfur Dioxide',
+      code: '(SO2)',
+      value: so2.value,
+      unit: 'ppb',
+      borderColor: 'border-[#10b981]',
+      icon: <CloudFog className="w-5 h-5 text-slate-400" />,
+      hasAlert: false,
+    },
+    {
+      id: 'no2',
+      title: 'Nitrogen Dioxide',
+      code: '(NO2)',
+      value: no2.value,
+      unit: 'ppb',
+      borderColor: 'border-[#10b981]',
+      icon: <Wind className="w-5 h-5 text-slate-400" />,
+      hasAlert: false,
+    },
+    {
+      id: 'o3',
+      title: 'Ozone',
+      code: '(O3)',
+      value: o3.value,
+      unit: 'ppb',
+      borderColor: 'border-[#10b981]',
+      icon: <Sun className="w-5 h-5 text-slate-400" />,
+      hasAlert: false,
+    },
+  ];
+
+  const trendingArticles = [
+    {
+      id: 1,
+      ringColor: 'border-yellow-400',
+      title: 'What Does a Good Air Quality Day Feel...',
+      badgeBg: 'bg-emerald-900/60',
+      imageDesc: 'Green trees sunlight'
+    },
+    {
+      id: 2,
+      ringColor: 'border-pink-500',
+      title: "What's in the Air You're Breathing?",
+      badgeBg: 'bg-purple-900/60',
+      imageDesc: 'Breathing lungs illustration'
+    },
+    {
+      id: 3,
+      ringColor: 'border-amber-400',
+      title: 'Delhi and Beijing: Could Delhi Have a...',
+      badgeBg: 'bg-amber-900/60',
+      imageDesc: 'City skyline smog'
+    },
+    {
+      id: 4,
+      ringColor: 'border-purple-400',
+      title: '530 or 470? Which AQI Should You...',
+      badgeBg: 'bg-slate-800',
+      imageDesc: 'AQI comparison numbers'
+    },
+  ];
 
   return (
-    <div className="hud-panel rounded-3xl p-6 sm:p-7 shadow-2xl">
-      <div className="flex flex-wrap items-center justify-between gap-3 mb-5 pb-4 border-b border-white/5">
-        <div className="flex items-center gap-3">
-          <div className="p-2.5 rounded-2xl bg-cyan-950/80 border border-cyan-500/40 text-cyan-400 shadow-md">
-            <Gauge className="w-5 h-5" />
-          </div>
-          <div>
-            <h3 className="text-base font-bold text-white tracking-tight flex items-center gap-2">
-              Multi-Gas & Particulate Pollutant Matrix
-              <span className="text-[10px] bg-slate-800 text-slate-300 px-2 py-0.5 rounded-full border border-slate-700">
-                AQI.in Standard
-              </span>
-            </h3>
-            <p className="text-xs text-slate-400">
-              Live concentrations of 6 key ambient atmospheric pollutants against WHO safe exposure ceilings
-            </p>
-          </div>
+    <div className="w-full space-y-6">
+      {/* Section Header matching Screenshot 3 */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-xl sm:text-2xl font-black text-white tracking-tight">
+            Major Air Pollutants
+          </h2>
+          <p className="text-sm font-semibold text-[#00c8b3] mt-0.5">
+            {cityName}
+          </p>
         </div>
 
-        <div className="flex items-center gap-2 text-xs text-slate-400">
-          <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
-          <span>Real-time Continuous Gas Spectroscopy</span>
-        </div>
+        <button 
+          onClick={() => alert('AQI App is available on iOS App Store & Android Play Store.')}
+          className="flex items-center gap-2 bg-[#182032] hover:bg-[#202b40] text-slate-200 border border-[#26334d] px-4 py-2 rounded-xl text-xs font-bold transition-all"
+        >
+          <Smartphone className="w-4 h-4 text-[#00c8b3]" />
+          <span>Get AQI App</span>
+        </button>
       </div>
 
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3.5">
-        {pollutants.map((p) => {
-          const style = getStatusColor(p.status);
-          const ratio = (p.value / (p.whoThreshold || 1)).toFixed(1);
-          const isExceeded = p.value > p.whoThreshold;
+      {/* 6 Pollutant Cards matching Screenshot 3 */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        {cards.map((card) => (
+          <div
+            key={card.id}
+            className={`bg-[#182032] border border-[#232e47] rounded-2xl p-4 flex items-center justify-between relative transition-all hover:bg-[#1d273d] group cursor-pointer border-l-4 ${card.borderColor}`}
+          >
+            {card.hasAlert && (
+              <span className="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full bg-rose-500 text-white flex items-center justify-center text-[10px] font-bold shadow-md animate-pulse">
+                !
+              </span>
+            )}
 
-          return (
-            <div
-              key={p.code}
-              className={`p-4 rounded-2xl border transition-all ${style.bg} ${style.border} flex flex-col justify-between`}
-            >
-              <div>
-                <div className="flex items-center justify-between">
-                  <span className="font-mono text-xs font-bold text-slate-400">{p.chemical}</span>
-                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider ${style.badge}`}>
-                    {p.status}
-                  </span>
-                </div>
-                <h4 className="text-xs font-semibold text-slate-200 mt-1">{p.label}</h4>
-
-                <div className="my-2.5">
-                  <div className={`text-2xl font-black tracking-tight ${style.text}`}>
-                    {p.value}
-                  </div>
-                  <div className="text-[11px] text-slate-400 font-mono mt-0.5">{p.unit}</div>
-                </div>
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-[#111726] border border-[#232e47] flex items-center justify-center shrink-0">
+                {card.icon}
               </div>
-
-              <div className="pt-2 border-t border-white/5 text-[10px] space-y-1">
-                <div className="flex items-center justify-between text-slate-400">
-                  <span>WHO Max:</span>
-                  <span className="font-mono font-semibold text-slate-300">{p.whoThreshold} {p.unit}</span>
-                </div>
-                {isExceeded && (
-                  <div className="text-amber-400 font-semibold flex items-center gap-1">
-                    <AlertTriangle className="w-2.5 h-2.5" />
-                    <span>{ratio}x above threshold</span>
-                  </div>
-                )}
+              <div>
+                <p className="text-xs text-slate-300 font-medium leading-tight">
+                  {card.title}
+                </p>
+                <p className="text-[11px] text-slate-400 font-bold">
+                  {card.code}
+                </p>
               </div>
             </div>
-          );
-        })}
+
+            <div className="flex items-center gap-2">
+              <div className="text-right">
+                <span className="text-lg font-black text-white font-mono block leading-none">
+                  {card.value}
+                </span>
+                <span className="text-[10px] text-slate-400 font-medium">
+                  {card.unit}
+                </span>
+              </div>
+              <ChevronRight className="w-4 h-4 text-slate-500 group-hover:text-white transition-colors ml-1" />
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Trending in India Strip matching Screenshot 3 */}
+      <div className="bg-[#182032] border border-[#232e47] rounded-2xl p-4 sm:p-5">
+        <div className="flex items-center justify-between mb-3.5">
+          <h3 className="text-sm font-bold text-white flex items-center gap-1.5">
+            Trending in <span className="text-[#00c8b3]">India</span>
+          </h3>
+          <div className="flex items-center gap-1">
+            <button className="w-6 h-6 rounded-full bg-[#111726] text-slate-400 hover:text-white flex items-center justify-center transition-colors">
+              <ChevronLeft className="w-3.5 h-3.5" />
+            </button>
+            <button className="w-6 h-6 rounded-full bg-[#111726] text-slate-400 hover:text-white flex items-center justify-center transition-colors">
+              <ChevronRight className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+          {trendingArticles.map((art) => (
+            <div
+              key={art.id}
+              className="bg-[#111726] hover:bg-[#151d30] border border-[#232e47] rounded-xl p-2.5 flex items-center gap-3 transition-all cursor-pointer group"
+            >
+              <div className={`w-11 h-11 rounded-full border-2 ${art.ringColor} p-0.5 shrink-0 overflow-hidden bg-slate-800 flex items-center justify-center text-xs font-bold text-slate-300`}>
+                <span className="text-[10px] text-center leading-tight">AQI</span>
+              </div>
+              <p className="text-xs text-slate-300 group-hover:text-white line-clamp-2 leading-snug">
+                {art.title}
+              </p>
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );
