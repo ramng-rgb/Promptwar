@@ -14,6 +14,19 @@ export const CITIES_DATA: Record<string, AirQualityData> = {
     inversionWarning: true,
     windSpeed: '2.4 km/h (Calm - Trapping Smog)',
     healthAdvisory: 'High thermal inversion in effect until 11:30 AM. Outdoor exercise strictly discouraged. Children & elderly must stay indoors with sealed windows.',
+    stubbleFireAlert: {
+      activeFires: 1420,
+      impactPercentage: 38,
+      distanceKm: 85
+    },
+    pollutantsList: [
+      { code: 'pm25', label: 'PM2.5 Fine Soot', chemical: 'PM2.5', value: 342, unit: 'µg/m³', status: 'Severe', whoThreshold: 15, description: 'Combustion aerosols' },
+      { code: 'pm10', label: 'PM10 Coarse Dust', chemical: 'PM10', value: 480, unit: 'µg/m³', status: 'Severe', whoThreshold: 45, description: 'Road and construction dust' },
+      { code: 'no2', label: 'Nitrogen Dioxide', chemical: 'NO₂', value: 94, unit: 'µg/m³', status: 'Unhealthy', whoThreshold: 25, description: 'Heavy diesel transport exhaust' },
+      { code: 'co', label: 'Carbon Monoxide', chemical: 'CO', value: 3850, unit: 'µg/m³', status: 'Poor', whoThreshold: 4000, description: 'Incomplete combustion' },
+      { code: 'so2', label: 'Sulfur Dioxide', chemical: 'SO₂', value: 52, unit: 'µg/m³', status: 'Moderate', whoThreshold: 40, description: 'Industrial coal & refining' },
+      { code: 'o3', label: 'Ground Ozone', chemical: 'O₃', value: 72, unit: 'µg/m³', status: 'Moderate', whoThreshold: 100, description: 'Photochemical smog oxidant' }
+    ],
     forecast: [
       { time: '06:00', aqi: 412, suitableFor: 'Critical: Seal doors & run scrubbers' },
       { time: '09:00', aqi: 420, suitableFor: 'Avoid morning school/work outdoor exposure' },

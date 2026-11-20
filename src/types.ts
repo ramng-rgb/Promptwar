@@ -1,3 +1,23 @@
+export interface PollutantDetail {
+  code: 'pm25' | 'pm10' | 'co' | 'no2' | 'so2' | 'o3';
+  label: string;
+  chemical: string;
+  value: number;
+  unit: string;
+  status: 'Good' | 'Moderate' | 'Poor' | 'Unhealthy' | 'Severe';
+  whoThreshold: number;
+  description: string;
+}
+
+export interface CityRanking {
+  rank: number;
+  city: string;
+  country: string;
+  aqi: number;
+  status: string;
+  pm25: number;
+}
+
 export interface AirQualityData {
   city: string;
   region: string;
@@ -13,12 +33,18 @@ export interface AirQualityData {
   healthAdvisory: string;
   isLive?: boolean;
   lastUpdated?: string;
+  stubbleFireAlert?: {
+    activeFires: number;
+    impactPercentage: number;
+    distanceKm: number;
+  };
   gases?: {
     co?: number;
     no2?: number;
     so2?: number;
     o3?: number;
   };
+  pollutantsList?: PollutantDetail[];
   forecast: {
     time: string;
     aqi: number;

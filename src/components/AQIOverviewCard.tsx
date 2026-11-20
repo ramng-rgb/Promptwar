@@ -11,7 +11,8 @@ import {
   Radio,
   Navigation,
   Search,
-  X
+  X,
+  Flame
 } from 'lucide-react';
 import { AirQualityData } from '../types';
 import { searchLocations, GeocodingResult } from '../services/weatherService';
@@ -307,12 +308,36 @@ export const AQIOverviewCard: React.FC<AQIOverviewCardProps> = ({
         </div>
       </div>
 
-      {/* Advisory Banner */}
-      <div className="mt-5 p-3.5 rounded-xl bg-slate-900/90 border border-slate-800 flex items-start gap-3">
-        <ShieldAlert className="w-5 h-5 text-amber-400 shrink-0 mt-0.5" aria-hidden="true" />
-        <div className="text-xs text-slate-200">
-          <strong className="text-amber-400 font-semibold mr-1.5">Community Health Advisory:</strong>
-          {data.healthAdvisory}
+      {/* Advisory & Stubble Smoke Alerts Banner */}
+      <div className="mt-5 grid grid-cols-1 md:grid-cols-12 gap-3.5">
+        <div className="md:col-span-8 p-4 rounded-2xl bg-slate-950/70 border border-white/5 flex items-start gap-3">
+          <ShieldAlert className="w-5 h-5 text-amber-400 shrink-0 mt-0.5" aria-hidden="true" />
+          <div className="text-xs text-slate-200">
+            <strong className="text-amber-400 font-semibold mr-1.5">Community Health Advisory:</strong>
+            {data.healthAdvisory}
+          </div>
+        </div>
+
+        {/* Real-time Fire / Agricultural Stubble Burning Indicator (AQI.in inspired) */}
+        <div className="md:col-span-4 p-4 rounded-2xl bg-amber-950/40 border border-amber-600/40 flex items-center justify-between">
+          <div className="flex items-center gap-2.5">
+            <div className="p-2 rounded-xl bg-amber-500/20 text-amber-400 border border-amber-500/30">
+              <Flame className="w-4 h-4 animate-bounce" />
+            </div>
+            <div>
+              <span className="text-[10px] font-bold text-amber-300 uppercase tracking-wider block">
+                Biomass & Stubble Smoke
+              </span>
+              <span className="text-xs font-bold text-white">
+                {data.stubbleFireAlert 
+                  ? `${data.stubbleFireAlert.activeFires} Active Fires (${data.stubbleFireAlert.distanceKm}km away)` 
+                  : 'Low Local Biomass Smoke'}
+              </span>
+            </div>
+          </div>
+          <span className="text-xs font-mono font-bold text-amber-400 bg-amber-950/80 px-2 py-1 rounded-lg border border-amber-700/50">
+            {data.stubbleFireAlert ? `+${data.stubbleFireAlert.impactPercentage}% PM2.5` : 'Normal'}
+          </span>
         </div>
       </div>
 

@@ -4,17 +4,20 @@ import {
   Sparkles, 
   BarChart, 
   Map,
+  Trophy,
   AlertOctagon,
   HeartHandshake
 } from 'lucide-react';
 import { CITIES_DATA, INITIAL_SUSTAINABLE_ACTIONS } from './mockData';
-import { AirQualityData, FamilyProfile, SustainableAction } from './types';
+import { AirQualityData, FamilyProfile, SustainableAction, PollutantDetail } from './types';
 import { AQIOverviewCard } from './components/AQIOverviewCard';
 import { FamilyProfileCustomizer } from './components/FamilyProfileCustomizer';
 import { ActionCardsSection } from './components/ActionCardsSection';
 import { ImpactDashboard } from './components/ImpactDashboard';
 import { GenAIAssistant } from './components/GenAIAssistant';
 import { WeatherAQIMap } from './components/WeatherAQIMap';
+import { PollutantBreakdownGrid } from './components/PollutantBreakdownGrid';
+import { CityRankingsTable } from './components/CityRankingsTable';
 import { 
   SUPPORTED_CITIES, 
   fetchLiveWeatherData, 
@@ -27,7 +30,7 @@ import {
 export const App: React.FC = () => {
   const [selectedCityKey, setSelectedCityKey] = useState<string>('delhi-ncr');
   const [aqiData, setAqiData] = useState<AirQualityData>(CITIES_DATA['delhi-ncr']);
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'map' | 'ai-assistant'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'map' | 'rankings' | 'ai-assistant'>('dashboard');
   const [actionCategoryFilter, setActionCategoryFilter] = useState<string>('all');
   const [isLoadingLive, setIsLoadingLive] = useState<boolean>(false);
   const [isLocating, setIsLocating] = useState<boolean>(false);
@@ -56,6 +59,19 @@ export const App: React.FC = () => {
       const liveAqi = Math.round(result.air.current.us_aqi || 120);
       const livePm25 = Math.round(result.air.current.pm2_5 || 45);
       const livePm10 = Math.round(result.air.current.pm10 || 70);
+      const coVal = Math.round(result.air.current.carbon_monoxide || 1200);
+      const no2Val = Math.round(result.air.current.nitrogen_dioxide || 40);
+      const so2Val = Math.round(result.air.current.sulphur_dioxide || 20);
+      const o3Val = Math.round(result.air.current.ozone || 55);
+
+      const computedPollutants: PollutantDetail[] = [
+        { code: 'pm25', label: 'PM2.5 Fine Soot', chemical: 'PM2.5', value: livePm25, unit: 'µg/m³', status: livePm25 > 150 ? 'Severe' : livePm25 > 75 ? 'Unhealthy' : 'Moderate', whoThreshold: 15, description: 'Combustion aerosols' },
+        { code: 'pm10', label: 'PM10 Inhalable', chemical: 'PM10', value: livePm10, unit: 'µg/m³', status: livePm10 > 250 ? 'Severe' : livePm10 > 100 ? 'Unhealthy' : 'Moderate', whoThreshold: 45, description: 'Road and construction dust' },
+        { code: 'no2', label: 'Nitrogen Dioxide', chemical: 'NO₂', value: no2Val, unit: 'µg/m³', status: no2Val > 80 ? 'Unhealthy' : no2Val > 40 ? 'Moderate' : 'Good', whoThreshold: 25, description: 'Heavy diesel transport' },
+        { code: 'co', label: 'Carbon Monoxide', chemical: 'CO', value: coVal, unit: 'µg/m³', status: coVal > 4000 ? 'Poor' : 'Good', whoThreshold: 4000, description: 'Incomplete combustion' },
+        { code: 'so2', label: 'Sulfur Dioxide', chemical: 'SO₂', value: so2Val, unit: 'µg/m³', status: so2Val > 50 ? 'Moderate' : 'Good', whoThreshold: 40, description: 'Industrial coal & refining' },
+        { code: 'o3', label: 'Ground Ozone', chemical: 'O₃', value: o3Val, unit: 'µg/m³', status: o3Val > 100 ? 'Poor' : 'Good', whoThreshold: 100, description: 'Photochemical smog oxidant' }
+      ];
       const temp = Math.round(result.weather.current.temperature_2m || 20);
       const humidity = Math.round(result.weather.current.relative_humidity_2m || 60);
       const windKmh = result.weather.current.wind_speed_10m || 4;
@@ -95,6 +111,8 @@ export const App: React.FC = () => {
           : `Moderate conditions in ${cityName}. Good ventilation during midday hours.`,
         isLive: true,
         lastUpdated: new Date().toLocaleTimeString(),
+        pollutantsList: computedPollutants,
+        stubbleFireAlert: liveAqi > 250 ? { activeFires: 890, impactPercentage: 28, distanceKm: 120 } : undefined,
         gases: {
           co: result.air.current.carbon_monoxide,
           no2: result.air.current.nitrogen_dioxide,
@@ -260,6 +278,17 @@ export const App: React.FC = () => {
               <span>Area AQI Map</span>
             </button>
             <button
+              onClick={() => setActiveTab('rankings')}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                activeTab === 'rankings'
+                  ? 'bg-cyan-500 text-slate-950 shadow-sm'
+                  : 'text-slate-400 hover:text-slate-200'
+              }`}
+            >
+              <Trophy className="w-3.5 h-3.5" />
+              <span>World Smog Ranking</span>
+            </button>
+            <button
               onClick={() => setActiveTab('ai-assistant')}
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
                 activeTab === 'ai-assistant'
@@ -293,6 +322,11 @@ export const App: React.FC = () => {
             {/* Direct Impact Ledger Bar */}
             <ImpactDashboard actions={actions} />
 
+            {/* AQI.in Inspired Multi-Pollutant Detailed Grid */}
+            {aqiData.pollutantsList && aqiData.pollutantsList.length > 0 && (
+              <PollutantBreakdownGrid pollutants={aqiData.pollutantsList} />
+            )}
+
             {/* Area-Wise AQI Map Preview Component */}
             <WeatherAQIMap
               currentCity={activeCityConfig}
@@ -315,6 +349,10 @@ export const App: React.FC = () => {
               onFilterChange={setActionCategoryFilter}
             />
           </>
+        )}
+
+        {activeTab === 'rankings' && (
+          <CityRankingsTable onSelectCity={handleCityChange} />
         )}
 
         {activeTab === 'map' && (
