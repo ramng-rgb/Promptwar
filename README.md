@@ -1,6 +1,7 @@
 # AeroPulse — Urban Air Quality & Smog Inversion Assistant
 
-Live Demo: [https://ramng-rgb.github.io/Promptwar/](https://ramng-rgb.github.io/Promptwar/)
+> **Live Application**: [https://ramng-rgb.github.io/Promptwar/](https://ramng-rgb.github.io/Promptwar/)  
+> **Project Demo Video**: [Watch Demo Video (MP4)](./AeroPulse_Demo_Video.mp4)
 
 AeroPulse is an open-source web application for monitoring ambient air quality, understanding particulate matter concentrations, and adopting low-emission household practices during winter smog and thermal inversion conditions.
 

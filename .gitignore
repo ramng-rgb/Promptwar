@@ -1,5 +1,6 @@
 node_modules/
 dist/
+demo_frames/
 .DS_Store
 .env
 .env.local
